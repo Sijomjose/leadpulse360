@@ -1,0 +1,21 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*.class
+.pytest_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Data & logs generated at runtime
+*.jsonl
+*.log
+
+# Operating System artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
