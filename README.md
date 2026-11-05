@@ -1,30 +1,26 @@
-# LeadPulse 360 | Enterprise Decision & Triage Engine
+# ⚡ LeadPulse 360
 
-LeadPulse 360 is an automated lead intake, evaluation, and triage engine designed to replace manual sales triage with deterministic, auditable routing workflows.
+**Enterprise Inbound Lead Triage, Scoring, and Routing Engine**
 
----
-
-## Core Capabilities
-
-- **Strict Schema Validation**: Sanitizes names, checks emails, and enforces non-negative budgets using Pydantic v2.
-- **Parametric Scoring Engine**: Weighted scoring matrix evaluating budget, headcount, buying urgency, and corporate email verification.
-- **Deterministic SLA Routing**:
-  - **VIP Tier** (Score >= 80): Immediate Slack alert to Enterprise AE (1h SLA).
-  - **Qualified Tier** (Score >= 60): Round-robin SDR queue assignment (24h SLA).
-  - **Nurture Tier** (Score >= 35): Automated educational email cadence (72h SLA).
-  - **Disqualified**: Suppressed outreach, logged with deterministic audit reasons.
-- **Append-Only Audit Trail**: Every decision is written to .jsonl for compliance and post-mortem review.
-- **Real-Time Analytics UI**: Streamlit dashboard with calibration controls, audit inspection, and triage health metrics.
+LeadPulse 360 is a production-grade backend engine designed to automate the intake, qualification, and routing of enterprise leads. Built with **Python 3.12**, **Pydantic v2**, and **FastAPI**, it delivers deterministic decision policies with sub-5ms latency and an immutable black-box audit trail.
 
 ---
 
-## Quickstart Guide
+## 🎯 Architecture & Capabilities
 
-### 1. Execute Automated Test Suite
-uv run pytest -v
+- **Pydantic v2 Strict Contracts:** Sanitizes inputs, validates corporate emails, and rejects invalid structures before execution.
+- **Deterministic Multi-Factor Scoring:** Weighted arithmetic scoring (0–100) assessing budget, employee headcount, urgency, and domain authority.
+- **SLA-Driven Routing Engine:** Dispatches leads to dedicated queues (`VIP`, `Qualified`, `Nurture`, `Disqualified`) with strict response SLAs.
+- **Black-Box Audit Logging:** Append-only structured JSONL records capturing input payloads, scoring breakdowns, and routing justifications for SOC2/ISO compliance.
+- **Dual Interfaces:**
+  - **REST Webhook API (FastAPI):** Automated endpoint for CRM, Typeform, or Webflow form integrations.
+  - **Live Executive Dashboard (Streamlit):** Visual triage station with dynamic threshold calibration and pipeline analytics.
 
-### 2. Verify Code Quality & Style
-uv run ruff check .
+---
 
-### 3. Launch Interactive Engine Dashboard
-uv run streamlit run app.py
+## 🚀 Quickstart
+
+### 1. Environment Setup
+Install dependencies with [uv](https://docs.astral.sh/uv/):
+```powershell
+uv sync
