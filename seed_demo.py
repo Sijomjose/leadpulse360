@@ -62,9 +62,9 @@ def run_seed():
         decision = determine_lead_route(lead, score_res, DEFAULT_CONFIG)
         logger.log_decision(lead, score_res, decision)
         name = f"{lead.first_name} {lead.last_name}"
-        print(
-            f"  [+] Logged: {name:<18} | Score: {score_res.total_score:>3}/100 | Tier: {decision.destination.value}"
-        )
+        score_str = f"Score: {score_res.total_score:>3}/100"
+        tier_str = f"Tier: {decision.destination.value}"
+        print(f"  [+] Logged: {name:<18} | {score_str} | {tier_str}")
     print(">>> Demo dataset seeded successfully!")
 
 
