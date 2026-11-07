@@ -1,3 +1,5 @@
+import os
+
 from pydantic import BaseModel
 
 
@@ -31,3 +33,5 @@ class ScoringConfig(BaseModel):
 
 
 DEFAULT_CONFIG = ScoringConfig()
+
+WEBHOOK_SECRET = os.getenv("LEADPULSE_WEBHOOK_SECRET", "leadpulse_secret_key_2026")

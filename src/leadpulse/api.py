@@ -1,13 +1,16 @@
+import hashlib
+import hmac
+import json
 """FastAPI REST application exposing LeadPulse 360 endpoints."""
 
 from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from pydantic import BaseModel
 
 from leadpulse.analytics import AnalyticsSummary
 from leadpulse.audit import AuditLogger
-from leadpulse.config import DEFAULT_CONFIG
+from leadpulse.config import DEFAULT_CONFIG, WEBHOOK_SECRET
 from leadpulse.routing import RoutingDecision, determine_lead_route
 from leadpulse.schemas import InboundLead
 from leadpulse.scoring import ScoreResult, calculate_lead_score
@@ -19,6 +22,17 @@ app = FastAPI(
 )
 
 logger = AuditLogger()
+
+def verify_webhook_signature(raw_body: bytes, signature_header: str | None, secret_header: str | None) -> bool:
+    if secret_header and hmac.compare_digest(secret_header.strip(), WEBHOOK_SECRET.strip()):
+        return True
+    if signature_header:
+        expected_sig = hmac.new(WEBHOOK_SECRET.encode(), raw_body, hashlib.sha256).hexdigest()
+        provided_sig = signature_header.replace("sha256=", "").strip()
+        if hmac.compare_digest(expected_sig, provided_sig):
+            return True
+    return False
+
 
 
 class LeadTriageResponse(BaseModel):
@@ -75,7 +89,24 @@ def get_analytics() -> Dict[str, Any]:
     status_code=status.HTTP_201_CREATED,
     tags=["Webhooks"],
 )
-async def ingest_form_webhook(payload: Dict[str, Any]) -> LeadTriageResponse:
+async def ingest_form_webhook(request: Request) -> LeadTriageResponse:
+    raw_body = await request.body()
+    sig_header = request.headers.get("X-Hub-Signature-256")
+    sec_header = request.headers.get("X-Webhook-Secret")
+
+    if not verify_webhook_signature(raw_body, sig_header, sec_header):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: Invalid or missing webhook signature."
+        )
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8") or "{}")
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Malformed JSON payload."
+        )
     """Normalize raw inbound form webhooks and run through triage engine."""
     full_name = str(payload.get("full_name") or payload.get("name") or "").strip()
     first_name = str(payload.get("first_name") or "").strip()
