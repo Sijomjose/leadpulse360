@@ -5,11 +5,12 @@ import json
 
 from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, status
 from pydantic import BaseModel
 
 from leadpulse.analytics import AnalyticsSummary
 from leadpulse.audit import AuditLogger
+from leadpulse.dispatcher import dispatch_lead_notifications
 from leadpulse.config import DEFAULT_CONFIG, WEBHOOK_SECRET
 from leadpulse.routing import RoutingDecision, determine_lead_route
 from leadpulse.schemas import InboundLead
@@ -55,12 +56,14 @@ def health_check() -> Dict[str, str]:
     status_code=status.HTTP_201_CREATED,
     tags=["Triage"],
 )
-def triage_lead(lead: InboundLead) -> LeadTriageResponse:
+def triage_lead(lead: InboundLead, background_tasks: BackgroundTasks = None) -> LeadTriageResponse:
     """Evaluate an inbound lead payload and return routing instructions."""
     try:
         score_res = calculate_lead_score(lead, DEFAULT_CONFIG)
         decision = determine_lead_route(lead, score_res, DEFAULT_CONFIG)
         logger.log_decision(lead, score_res, decision)
+        if background_tasks is not None:
+            background_tasks.add_task(dispatch_lead_notifications, lead, decision, score_res)
 
         return LeadTriageResponse(
             status="success",
@@ -89,7 +92,7 @@ def get_analytics() -> Dict[str, Any]:
     status_code=status.HTTP_201_CREATED,
     tags=["Webhooks"],
 )
-async def ingest_form_webhook(request: Request) -> LeadTriageResponse:
+async def ingest_form_webhook(request: Request, background_tasks: BackgroundTasks) -> LeadTriageResponse:
     raw_body = await request.body()
     sig_header = request.headers.get("X-Hub-Signature-256")
     sec_header = request.headers.get("X-Webhook-Secret")
@@ -152,4 +155,4 @@ async def ingest_form_webhook(request: Request) -> LeadTriageResponse:
         use_case_notes=f"[{src}] {notes}".strip(),
     )
 
-    return triage_lead(normalized_lead)
+    return triage_lead(normalized_lead, background_tasks)
