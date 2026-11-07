@@ -18,4 +18,4 @@ ENV/
 # Operating System artifacts
 .DS_Store
 Thumbs.db
-desktop.ini
+desktop.inibackups/
